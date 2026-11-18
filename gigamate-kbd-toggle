@@ -6,7 +6,7 @@ import subprocess
 import time
 from pathlib import Path
 
-COLOR = "red"
+FALLBACK_COLOR = "red"
 DELAY_SEC = 0.05
 
 config_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
@@ -20,14 +20,17 @@ with open(lock_file, "w") as lf:
     time.sleep(DELAY_SEC)
 
     try:
-        current = int(json.loads(config_file.read_text()).get("brightness", 0))
+        cfg = json.loads(config_file.read_text())
+        current = int(cfg.get("brightness", 0))
+        color = str(cfg.get("colour") or FALLBACK_COLOR)
     except Exception:
         current = 0
+        color = FALLBACK_COLOR
 
     if current == 0:
-        cmd = [gigamate_bin, "rgb", "static", COLOR, "--level", "dim"]
+        cmd = [gigamate_bin, "rgb", "static", color, "--level", "dim"]
     elif current == 1:
-        cmd = [gigamate_bin, "rgb", "static", COLOR, "--level", "full"]
+        cmd = [gigamate_bin, "rgb", "static", color, "--level", "full"]
     else:
         cmd = [gigamate_bin, "rgb", "off"]
 
