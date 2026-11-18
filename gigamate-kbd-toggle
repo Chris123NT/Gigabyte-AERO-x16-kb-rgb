@@ -1,0 +1,34 @@
+#!/usr/bin/python3
+import fcntl
+import json
+import os
+import subprocess
+import time
+from pathlib import Path
+
+COLOR = "red"
+DELAY_SEC = 0.05
+
+config_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+config_file = config_home / "gigamate" / "config.json"
+runtime_dir = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp"))
+lock_file = runtime_dir / "gigamate-kbd-toggle.lock"
+gigamate_bin = str(Path.home() / ".local" / "bin" / "gigamate")
+
+with open(lock_file, "w") as lf:
+    fcntl.flock(lf, fcntl.LOCK_EX)
+    time.sleep(DELAY_SEC)
+
+    try:
+        current = int(json.loads(config_file.read_text()).get("brightness", 0))
+    except Exception:
+        current = 0
+
+    if current == 0:
+        cmd = [gigamate_bin, "rgb", "static", COLOR, "--level", "dim"]
+    elif current == 1:
+        cmd = [gigamate_bin, "rgb", "static", COLOR, "--level", "full"]
+    else:
+        cmd = [gigamate_bin, "rgb", "off"]
+
+    subprocess.run(cmd, check=False)
